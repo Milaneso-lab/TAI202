@@ -18,3 +18,23 @@ async def bienvenido():
         "estatus" : "200"
     }
 
+
+# /docs <- programador - documentación
+# /redoc <- usuarioFinal - documentación
+
+# Endpoint con parámetro obligatorio
+@app.get("/saludo/{nombre}")
+async def saludo(nombre: str):
+    return {"mensaje": f"Hola, {nombre}"}
+
+# Endpoint con parámetros opcionales 
+@app.get("/perfil")
+async def perfil(nombre: str = "Invitado", ciudad: str = "No especificada"):
+    return {
+        "nombre": nombre,
+        "ciudad": ciudad,
+        "mensaje": f"{nombre} está en {ciudad}"
+    }
+
+
+
