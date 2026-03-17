@@ -53,7 +53,7 @@ def listar_citas():
 # CONSULTAR POR ID DE CITA
 @app.get("/citas/buscar/{id}")
 def buscar_cita(id: int):
-    resultados = [cita for cita in Citas_bd if id.lower in cita["id"].lower]
+    resultados = [cita for cita in Citas_bd if id in cita["id"].lower]
     if not resultados:
         raise HTTPException(status_code=404, detail="Cita no encontrada.")
     return resultados
