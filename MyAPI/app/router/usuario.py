@@ -3,6 +3,9 @@ from app.models.usuario import crear_usuario
 from app.data.database import usuarios 
 from app.security.auth import verificar_peticion
 
+from sqlalchemy.orm import Session
+from app.data.db import get_db
+from app.data.usuario import usuario as dbUsuario
 
 router = APIRouter(
     prefix="/v1/usuarios", 
@@ -12,27 +15,27 @@ router = APIRouter(
 # USUARIO CRED
 #GET: Lee los usuarios mostrados en la BD
 @router.get("/")
-async def leer_usuarios():
+async def leer_usuarios(db:Session = Depends(get_db)):
+    queryUsuarios = db.query(dbUsuario).all()
+    
     return{
         "total":len(usuarios), 
-        "usuarios": usuarios,
+        "usuarios": queryUsuarios,
         "status":"200"
     }
 
 # POST: Crea usuarios verificando primero que el id no esté en la BD
 @router.post("/", status_code=status.HTTP_201_CREATED)
-async def crear_usuario(usuario:crear_usuario): #<------- usamos el modelo
-    for usr in usuarios:
-        if usr ["id"] == usuario.id: #<--- cambiamos por que ya no usamos dict
-            raise HTTPException(
-                status_code=400,
-                detail= "El id ya existe"
-            )
-    usuarios.append(usuario)
+async def crear_usuario(usuarioP: crear_usuario, db:Session = Depends(get_db)):
+    nuevoU = dbUsuario(nombre = usuarioP.nombre, edad = usuarioP.edad) #<------- usamos el modelo
+    db.add(nuevoU)
+    db.commit()
+    db.refresh(nuevoU)
+
     return{
-        "mensaje":"Usuario Creado",
-        "Datos nuevos": usuario
-    }
+        "mensaje": "Usuario Agregado",
+        "Usuario": usuarioP
+    } 
 
 # PUT: Actualizar un usuario completo (Reemplaza todos los datos)
 @router.put("/{id}")
