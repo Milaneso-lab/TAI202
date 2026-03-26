@@ -1,14 +1,18 @@
 #importaciones
 from fastapi import FastAPI
-from app.router import usuario, tiendita
+from app.router import usuario,misc
+from app.data.db import engine
+from app.data import usuario as usuarioDB
+
+usuarioDB.Base.metadata.create_all(bind= engine)
 
 
 #Instancia del servidor
 app = FastAPI(
     title= "Mi primer API",
-    description= "Flores Madriz José Antonio",
+    description= "Antonio Madriz",
     version="1.0"
 )
 
 app.include_router(usuario.router)
-app.include_router(tiendita.tiendita)
+app.include_router(misc.misc)

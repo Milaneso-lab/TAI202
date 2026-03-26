@@ -19,4 +19,3 @@ def verificar_peticion(credenciales:HTTPBasicCredentials=Depends(security)):
             detail="Credenciales no válidas"
         )
     return credenciales.username
-
