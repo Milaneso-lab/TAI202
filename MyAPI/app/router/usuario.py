@@ -1,41 +1,59 @@
-from fastapi import APIRouter, FastAPI, status, HTTPException, Depends
+from fastapi import APIRouter, status, HTTPException, Depends
 from app.models.usuario import crear_usuario
-from app.data.database import usuarios 
+from app.data.database import usuarios
 from app.security.auth import verificar_peticion
 
-from sqlalchemy.orm import Session
-from app.data.db import get_db
-from app.data.usuario import usuario as dbUsuario
-
 router = APIRouter(
-    prefix="/v1/usuarios", 
+    prefix="/v1/usuarios",
     tags=["HTTP CRUD"]
 )
 
 # USUARIO CRED
-#GET: Lee los usuarios mostrados en la BD
+# GET: Lee los usuarios mostrados en la lista en memoria
 @router.get("/")
-async def leer_usuarios(db:Session = Depends(get_db)):
-    queryUsuarios = db.query(dbUsuario).all()
-    
-    return{
-        "total":len(usuarios), 
-        "usuarios": queryUsuarios,
-        "status":"200"
+async def leer_usuarios():
+    return {
+        "total": len(usuarios),
+        "usuarios": usuarios,
+        "status": "200"
     }
 
-# POST: Crea usuarios verificando primero que el id no esté en la BD
-@router.post("/", status_code=status.HTTP_201_CREATED)
-async def crear_usuario(usuarioP: crear_usuario, db:Session = Depends(get_db)):
-    nuevoU = dbUsuario(nombre = usuarioP.nombre, edad = usuarioP.edad) #<------- usamos el modelo
-    db.add(nuevoU)
-    db.commit()
-    db.refresh(nuevoU)
+# GET por ID: Obtiene un usuario de la lista en memoria
+@router.get("/{id}", status_code=status.HTTP_200_OK)
+async def leer_usuario_por_id(id: int):
+    for usr in usuarios:
+        if usr["id"] == id:
+            return {
+                "usuario": usr,
+                "status": "200"
+            }
 
-    return{
+    raise HTTPException(
+        status_code=404,
+        detail="Usuario no encontrado"
+    )
+
+# POST: Crea usuario en la lista verificando que no exista el ID
+@router.post("/", status_code=status.HTTP_201_CREATED)
+async def crear_usuario_endpoint(usuarioP: crear_usuario):
+    for usr in usuarios:
+        if usr["id"] == usuarioP.id:
+            raise HTTPException(
+                status_code=400,
+                detail="Ya existe un usuario con ese id"
+            )
+
+    nuevo = {
+        "id": usuarioP.id,
+        "nombre": usuarioP.nombre,
+        "edad": usuarioP.edad,
+    }
+    usuarios.append(nuevo)
+
+    return {
         "mensaje": "Usuario Agregado",
-        "Usuario": usuarioP
-    } 
+        "Usuario": nuevo
+    }
 
 # PUT: Actualizar un usuario completo (Reemplaza todos los datos)
 @router.put("/{id}")
@@ -48,12 +66,11 @@ async def actualizar_usuario(id: int, usuario_actualizado: dict):
             usuarios[index] = usuario_actualizado
             return {
                 "mensaje": "Usuario actualizado correctamente",
-                "datos_anteriores": usr, # Opcional: para ver qué cambió
+                "datos_anteriores": usr,
                 "datos_nuevos": usuario_actualizado,
                 "status": "200"
             }
-    
-    # Si termina el ciclo y no encontró el ID
+
     raise HTTPException(
         status_code=404,
         detail="Usuario no encontrado para actualizar"
@@ -67,7 +84,7 @@ async def actualizar_parcial_usuario(id: int, usuario_parcial: dict):
             # El método .update() de python actualiza solo las llaves que vienen en el dict
             usr.update(usuario_parcial)
             # Aseguramos que el ID no cambie aunque lo envíen en el body
-            usr["id"] = id 
+            usr["id"] = id
             return {
                 "mensaje": "Usuario modificado parcialmente",
                 "datos_nuevos": usr,
@@ -81,7 +98,7 @@ async def actualizar_parcial_usuario(id: int, usuario_parcial: dict):
 
 # DELETE: Eliminar un usuario
 @router.delete("/{id}", status_code=status.HTTP_200_OK)
-async def eliminar_usuario(id: int, usuarioAuth:str= Depends):
+async def eliminar_usuario(id: int, usuarioAuth: str = Depends(verificar_peticion)):
     for usr in usuarios:
         if usr["id"] == id:
             usuarios.remove(usr)

@@ -5,11 +5,16 @@ import os
 #1. Definimos la URL de conexión
 DATABASE_URL= os.getenv(
     "DATABASE_URL",
-    "postgresql://admin:123456@postgres:5432/DB_miapi"
+    "sqlite:///./db_miapi.sqlite3"
 )
 
 #2. Creamos el motor de la conexión
-engine= create_engine(DATABASE_URL)
+connect_args = {}
+if DATABASE_URL.startswith("sqlite"):
+    # SQLite necesita este argumento en apps con múltiples hilos.
+    connect_args = {"check_same_thread": False}
+
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
 
 #3. Preparamos el gestionador de sesiones
 SessionLocal= sessionmaker(

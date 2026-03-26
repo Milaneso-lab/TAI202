@@ -5,7 +5,7 @@ from app.security.auth import verificar_peticion
 
 from sqlalchemy.orm import Session
 from app.data.db import get_db
-from app.data.usuario import usuario as dbUsuario
+from app.data.usuarios import usuario as dbUsuario
 
 
 
